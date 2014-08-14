@@ -7,6 +7,10 @@ Requirements:
 
 ODE (with Python bindings) from http://ode-wiki.org/wiki/index.php?title=Manual:_Install_and_Use#Install_with_Python_bindings
 
+Vpython from
+http://www.vpython.org
+
+Numpy
 
 Vpyode files, modified by TwoShanks.  Included in this repo.
 
