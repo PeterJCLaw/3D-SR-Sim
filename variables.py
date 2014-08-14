@@ -7,10 +7,10 @@ token_list = []
 robot_list = []
 
 
-LENGTH = 4
-WIDTH = 4
+LENGTH = 8
+WIDTH = 8
 HEIGHT = 0.3
-NUMBER_OF_TOKENS = 10
+NUMBER_OF_TOKENS = 1
 
 
 

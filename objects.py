@@ -1,10 +1,8 @@
 #New version of objects implementing vpyode
 
-import numpy as np
 import ode,odelib,vpyode
 from visual import *
 import Image
-import random
 from Texturesandcolours import *
 import collections
 from variables import *
@@ -27,15 +25,20 @@ class Arena(object):
     def __init__(self):
         # Create and draw arena and associated geoms
         self.floor = ode.GeomPlane(vpyode._bigSpace, (0,1,0), 0)
-        self.arenafloor = box(pos=(0,0,0), size=(0.01,4,4), color=color.orange, material = tex2, axis=(0,1,0))
-        self.wall1 = ode.GeomPlane(vpyode._bigSpace, (-1,0,0), -2)
-        self.wall2 = ode.GeomPlane(vpyode._bigSpace, (1,0,0), -2)
-        self.wall3 = ode.GeomPlane(vpyode._bigSpace, (0,0,-1), -2)
-        self.wall4 = ode.GeomPlane(vpyode._bigSpace, (0,0,1), -2)
-        self.wall1vis = box(pos=(-2,0,0), size=(0.01,1,4), color=color.orange)
-        self.wall2vis = box(pos=(2,0,0), size=(0.01,1,4), color=color.orange)
-        self.wall3vis = box(pos=(0,0,-2), size=(4,1,0.01), color=color.orange)
-        self.wall4vis = box(pos=(0,0,2), size=(4,1,0.01), color=color.orange)
+        self.arenafloor = box(pos=(0,0,0), size=(0.01,8,8), color=color.orange, material = tex2, axis=(0,1,0))
+        self.wall1 = ode.GeomPlane(vpyode._bigSpace, (-1,0,0), -4)
+        self.wall2 = ode.GeomPlane(vpyode._bigSpace, (1,0,0), -4)
+        self.wall3 = ode.GeomPlane(vpyode._bigSpace, (0,0,-1), -4)
+        self.wall4 = ode.GeomPlane(vpyode._bigSpace, (0,0,1), -4)
+        self.wall1vis = box(pos=(-4,0,0), size=(0.01,1,8), color=color.orange)
+        self.wall2vis = box(pos=(4,0,0), size=(0.01,1,8), color=color.orange)
+        self.wall3vis = box(pos=(0,0,-4), size=(8,1,0.01), color=color.orange)
+        self.wall4vis = box(pos=(0,0,4), size=(8,1,0.01), color=color.orange)
+        #Make internal walls
+        self.topwall = create_box(world,10000,0.25,0.1,2,(0,0.05,-3),0,color.brown)
+        self.rightwall = create_box(world,10000,2,0.1,0.25,(3,0.05,0),0,color.brown)
+        self.bottomwall = create_box(world,10000,0.25,0.1,2,(0,0.05,3),0,color.brown)
+        self.leftwall = create_box(world,10000,2,0.1,0.25,(-3,0.05,0),0,color.brown)
 
 class Motor(object):
     def __init__(self, which_motor, speed = 0.00):
@@ -56,23 +59,24 @@ class Motor(object):
         del self._speed
 
 class Robot(object):
-    def __init__(self,x,y,z):
-        self.x = x
-        self.y = y
-        self.z = z
-        self.pos = vector(self.x,self.y,self.z)
-        self.box = create_box(world,80, 0.5,0.3,0.3, (self.x,self.y,self.z),0, color.blue)
+    def __init__(self,zone):
+        self.zone = zone
+        self.zonelookup = {0:(-3.2,0.15,3.2),1:(-3.2,0.15,-3.2),2:(3.2,0.15,-3.2),3:(3.2,0.15,3.2)}
+        self.rotationlookup = {0:2.4,1:-2.4,2:-0.5,3:0.5}
+        self.pos = vector(self.zonelookup[zone])
+        self.box = create_box(world,80, 0.5,0.5,0.5, self.pos,0, color.blue)
         self.makeCamera()
         self.motors = [Motor(0),Motor(1),Motor(2)]
         self.Bearingtuple = collections.namedtuple('Bearingtuple', 'x y z')
         self.Worldtuple = collections.namedtuple('Worldtuple', 'x y z')
         self.Markertuple = collections.namedtuple('Markertuple', 'distance code marker_type bearing world')
         self.totalmoment=0
+        self.box.setQuaternion((self.rotationlookup[zone],0,1,0))
     
     #Creates a box to act as camera
     def makeCamera(self):
         camera = vpyode.GDMElement()
-        camera.DefineBox(1000,0.15,0.1,0.1,color.red,self.box.GetFeature("box").pos + (0.15,0.05,0))
+        camera.DefineBox(1000,0.15,0.1,0.1,color.red,self.box.GetFeature("box").pos + (0.25,0.25,0))
         self.box.AddGDMElement("camera",camera)
     
     def roty_between(self, v1, v2):
@@ -102,8 +106,9 @@ class Robot(object):
             if rot_y < 0.53 and rot_y > -0.53:
                 if rot_z < 0.53 and rot_z > -0.53:
                     distance = mag(robot_to_marker)
-                    marker = self.Markertuple(distance,m.code,m.marker_type,self.Bearingtuple(0,np.degrees(rot_y),np.degrees(rot_z)),self.Worldtuple(robot_to_marker.x,robot_to_marker.y,robot_to_marker.z))
-                    personal_marker_list.append(marker)
+                    marker = self.Markertuple(distance,m.code,m.marker_type,self.Bearingtuple(0,degrees(rot_y),degrees(rot_z)),self.Worldtuple(robot_to_marker.x,robot_to_marker.y,robot_to_marker.z))
+                    if distance > 0.7:
+                        personal_marker_list.append(marker)
                     
         #check token markers
         for t in token_list:
@@ -118,8 +123,9 @@ class Robot(object):
                     if rot_y < 0.53 and rot_y > -0.53:
                         if rot_z < 0.53 and rot_z > -0.53:
                             distance = mag(robot_to_marker)
-                            marker = self.Markertuple(distance,face.code,face.marker_type,self.Bearingtuple(0,np.degrees(rot_y),np.degrees(rot_z)),self.Worldtuple(robot_to_marker.x,robot_to_marker.y,robot_to_marker.z))
-                            personal_marker_list.append(marker)
+                            marker = self.Markertuple(distance,face.code,face.marker_type,self.Bearingtuple(0,degrees(rot_y),degrees(rot_z)),self.Worldtuple(robot_to_marker.x,robot_to_marker.y,robot_to_marker.z))
+                            if distance > 0.5:
+                                personal_marker_list.append(marker)
         return personal_marker_list
 
     def update(self):
@@ -141,18 +147,18 @@ Token class describes a "Token" (cardboard box) with markers attached on all fac
 '''
 class Token(object):
     def __init__(self,code):
-        self.x = np.random.uniform(-4,4)
-        self.z = np.random.uniform(-4,4)
-        self.y = 0.05
+        self.x = 0
+        self.z = 0
+        self.y = 0.13
         self.pos = vector(self.x,0.05,self.z)
-        self.size = 0.1
+        self.size = 0.25
         self.box = create_box(world, 100, self.size,self.size,self.size, (self.x,self.y,self.z),0, color.brown)
-        self.markers = [Marker(code,self.box.GetFeature('box').pos.x-0.05,self.box.GetFeature('box').pos.y,self.box.GetFeature('box').pos.z,(-1,0,0),"TOKEN"),
-                        Marker(code,self.box.GetFeature('box').pos.x+0.05,self.box.GetFeature('box').pos.y,self.box.GetFeature('box').pos.z,(1,0,0),"TOKEN"),
-                        Marker(code,self.box.GetFeature('box').pos.x,self.box.GetFeature('box').pos.y,self.box.GetFeature('box').pos.z-0.05,(0,0,-1),"TOKEN"),
-                        Marker(code,self.box.GetFeature('box').pos.x,self.box.GetFeature('box').pos.y,self.box.GetFeature('box').pos.z+0.05,(0,0,1),"TOKEN"),
-                        Marker(code,self.box.GetFeature('box').pos.x,self.box.GetFeature('box').pos.y-0.05,self.box.GetFeature('box').pos.z,(0,-1,0),"TOKEN"),
-                        Marker(code,self.box.GetFeature('box').pos.x,self.box.GetFeature('box').pos.y+0.05,self.box.GetFeature('box').pos.z,(0,1,0),"TOKEN")]
+        self.markers = [Marker(code,self.box.GetFeature('box').pos.x-self.size/2,self.box.GetFeature('box').pos.y,self.box.GetFeature('box').pos.z,(-1,0,0),"TOKEN"),
+                        Marker(code,self.box.GetFeature('box').pos.x+self.size/2,self.box.GetFeature('box').pos.y,self.box.GetFeature('box').pos.z,(1,0,0),"TOKEN"),
+                        Marker(code,self.box.GetFeature('box').pos.x,self.box.GetFeature('box').pos.y,self.box.GetFeature('box').pos.z-self.size/2,(0,0,-1),"TOKEN"),
+                        Marker(code,self.box.GetFeature('box').pos.x,self.box.GetFeature('box').pos.y,self.box.GetFeature('box').pos.z+self.size/2,(0,0,1),"TOKEN"),
+                        Marker(code,self.box.GetFeature('box').pos.x,self.box.GetFeature('box').pos.y-self.size/2,self.box.GetFeature('box').pos.z,(0,-1,0),"TOKEN"),
+                        Marker(code,self.box.GetFeature('box').pos.x,self.box.GetFeature('box').pos.y+self.size/2,self.box.GetFeature('box').pos.z,(0,1,0),"TOKEN")]
         self.box.AddDisplayObject("0",self.markers[0].marker)
         self.box.AddDisplayObject("1",self.markers[1].marker)
         self.box.AddDisplayObject("2",self.markers[2].marker)
@@ -171,7 +177,7 @@ class Marker(object):
         self.axis = vector(int(axis_decider[0]),int(axis_decider[1]),int(axis_decider[2]))
         self.marker_type = marker_type
         if self.marker_type == "TOKEN":
-            self.size = 0.09
+            self.size = 0.23
         elif self.marker_type == "ARENA":
             self.size = 0.4
         self.marker = box(pos=self.pos, size=(0.001,self.size,self.size), color=color.white,material=tex,axis = self.axis)
