@@ -10,7 +10,10 @@ ODE (with Python bindings) from http://ode-wiki.org/wiki/index.php?title=Manual:
 Vpython from
 http://www.vpython.org
 
-Numpy
+Numpy (installed by vpython installer on windows)
+
+Python Image Library from
+http://www.pythonware.com/products/pil/
 
 Vpyode files, modified by TwoShanks.  Included in this repo.
 
