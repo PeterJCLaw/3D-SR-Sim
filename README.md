@@ -5,10 +5,14 @@
 
 ## Requirements:
 
-* Open Dynamics Engine (ODE), with python bindings.
+* Open Dynamics Engine (ODE), with python bindings
     - http://ode-wiki.org/wiki/index.php?title=Manual:_Install_and_Use#Install_with_Python_bindings
-    - package `python-pyode` in Ubuntu 14.04
-* Vpython.
+    - In Ubuntu 14.04 you need to pick the single precision ODE package
+      and manually building the PyODE sources is recommended:
+        - Install packages `python-pyrex`, `libode1sp` and `libode-sp-dev`
+        - Download the PyODE sources from http://pyode.sourceforge.net/
+        - Build & install the PyODE sources per their INSTALL file
+* Vpython
     - http://www.vpython.org
     - package `python-visual` in Ubuntu 14.04
 * Numpy
