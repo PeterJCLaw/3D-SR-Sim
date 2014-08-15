@@ -1,8 +1,9 @@
 
-from objects import *
-from variables import *
 import thread
-import random
+from visual import rate
+
+from objects import Arena, Robot, Token, populate_walls
+from variables import dt, NUMBER_OF_TOKENS, RATE, token_list, world
 
 import registration
 
