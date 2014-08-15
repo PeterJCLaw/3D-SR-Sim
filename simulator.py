@@ -1,5 +1,5 @@
 
-import thread
+import threading
 from visual import rate
 
 from objects import Arena, Robot, Token, populate_walls
@@ -24,21 +24,15 @@ user_funcs = registration.get_user_funcs()
 
 assert len(user_funcs) == 4, "Wrong number of user functions (got {0}).".format(len(user_funcs))
 
+robot_threads = []
 robotlist = []
-R0 = Robot(0)
-R1 = Robot(1)
-R2 = Robot(2)
-R3 = Robot(3)
 
-robotlist.append(R0)
-robotlist.append(R1)
-robotlist.append(R2)
-robotlist.append(R3)
-
-thread.start_new_thread(user_funcs[0], (R0,))
-thread.start_new_thread(user_funcs[1], (R1,))
-thread.start_new_thread(user_funcs[2], (R2,))
-thread.start_new_thread(user_funcs[3], (R3,))
+for i, func in enumerate(user_funcs):
+    robot = Robot(i)
+    thread = threading.Thread(target=func, args=(robot,))
+    robot_threads.append(thread)
+    robotlist.append(robot)
+    thread.start()
 
 while True:
     n = 2
